@@ -1,0 +1,28 @@
+﻿DROP DATABASE AprendizadoPHP;
+
+CREATE DATABASE AprendizadoPHP;
+
+USE AprendizadoPHP;
+
+CREATE TABLE Usuarios(
+	ID_User CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    User_nome VARCHAR(200) UNIQUE,
+   	User_senha VARCHAR(200),
+   	User_ADM BOOLEAN
+);
+
+DELIMITER !!
+
+CREATE PROCEDURE InserirUsuario (
+    IN p_User_nome VARCHAR(200),
+    IN p_User_senha VARCHAR(200),
+    IN p_User_ADM BOOLEAN
+)
+BEGIN
+    -- Insere os dados passados como parâmetro na tabela
+    INSERT INTO Usuarios (User_nome, User_senha,User_ADM)
+    VALUES (p_User_nome, p_User_senha,p_User_ADM);
+END !!
+DELIMITER ;
+
+CALL InserirUsuario('PedroAND','SURUBA!@3',1)

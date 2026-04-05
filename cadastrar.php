@@ -7,14 +7,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Pegando os dados enviados pelo HttpClient do C#
     $User_nome = $_POST['novoUsuario'] ?? null;
     $User_senha = $_POST['novaSenha'] ?? null;
-    $ID_User = $_POST['IDgerado'] ?? null;
-
-    if ($User_nome && $User_senha && $ID_User) {
+    
+    if ($User_nome && $User_senha) {
         // Preparando a query (proteção contra SQL Injection)
-        $stmt = $mysqli->prepare("INSERT INTO usuarios ( User_nome , User_senha, ID_User) VALUES (?, ?, ?)");
+        $stmt = $mysqli->prepare("INSERT INTO usuarios ( User_nome , User_senha) VALUES (?, ?)");
         
         // "ssii" = string, string, integer, integer
-        $stmt->bind_param("ssi", $User_nome, $User_senha, $ID_User);
+        $stmt->bind_param("ss", $User_nome, $User_senha);
 
         if ($stmt->execute()) {
             echo "sucesso"; // Resposta simples para o C#
