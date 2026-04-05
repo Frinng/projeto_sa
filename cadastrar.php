@@ -1,6 +1,6 @@
 <?php
 // cadastrar.php
-require("conexao.php"); // Certifique-se que este arquivo está na mesma pasta
+require("conexao.php"); //Necessita deste arquivo
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Preparando a query (proteção contra SQL Injection)
         $stmt = $mysqli->prepare("INSERT INTO usuarios ( User_nome , User_senha) VALUES (?, ?)");
         
-        // "ssii" = string, string, integer, integer
+        
         $stmt->bind_param("ss", $User_nome, $User_senha);
 
         if ($stmt->execute()) {

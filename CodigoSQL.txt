@@ -6,13 +6,34 @@ USE AprendizadoPHP;
 
 CREATE TABLE Usuarios(
 	ID_User CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    User_nome VARCHAR(200) UNIQUE,
-   	User_senha VARCHAR(200),
+    User_nome VARCHAR(200) UNIQUE NOT NULL,
+   	User_senha VARCHAR(200) NOT NULL,
    	User_ADM BOOLEAN
 );
 
-DELIMITER !!
 
+CREATE TABLE Ferraments(
+   ID_Ferramentas CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+   Tipo_Ferramenta VARCHAR(200),
+   Local_Ferramenta VARCHAR(200),
+   QNT_Ferramenta INT
+);
+
+CREATE TABLE Emprestimos(
+    ID_Emprestimo CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    ID_Ferramentas CHAR(36),
+    ID_User CHAR(36),
+    QNT_Ferramenta INT,
+    Inicio_Emprestimo DATETIME,
+    FIM_Emprestimo DATETIME,
+
+    FOREIGN KEY (ID_Ferramentas)  REFERENCES Ferraments(ID_Ferramentas),
+    FOREIGN KEY (ID_User)  REFERENCES Usuarios(ID_User)
+);
+
+
+
+DELIMITER !!
 CREATE PROCEDURE InserirUsuario (
     IN p_User_nome VARCHAR(200),
     IN p_User_senha VARCHAR(200),
@@ -25,4 +46,42 @@ BEGIN
 END !!
 DELIMITER ;
 
-CALL InserirUsuario('PedroAND','SURUBA!@3',1)
+
+DELIMITER ??
+CREATE PROCEDURE RegistrarEmprestimo (
+    IN p_Nome_Usuario VARCHAR(200),
+    IN p_Tipo_Ferramenta VARCHAR(200),
+    IN p_QNT_Desejada INT,
+    IN p_Data_Inicio DATETIME,
+    IN p_Data_Fim DATETIME
+)
+BEGIN
+    DECLARE v_ID_User CHAR(36);
+    DECLARE v_ID_Ferramentas CHAR(36);
+
+    
+    SELECT ID_User INTO v_ID_User 
+    FROM Usuarios 
+    WHERE User_nome = p_Nome_Usuario LIMIT 1;
+
+    -- 2. Pega o ID da Ferramenta baseada no tipo digitado
+    SELECT ID_Ferramentas INTO v_ID_Ferramentas 
+    FROM Ferramentas 
+    WHERE Tipo_Ferramenta = p_Tipo_Ferramenta LIMIT 1;
+
+   
+    IF v_ID_User IS NOT NULL AND v_ID_Ferramentas IS NOT NULL THEN
+        INSERT INTO Emprestimos (ID_Ferramentas, ID_User, QNT_Ferramenta, Inicio_Emprestimo, FIM_Emprestimo)
+        VALUES (v_ID_Ferramentas, v_ID_User, p_QNT_Desejada, p_Data_Inicio, p_Data_Fim);
+    ELSE
+        
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Erro: Usuário ou Tipo de Ferramenta não encontrados no banco de dados.';
+    END IF;
+
+END ??
+DELIMITER ;
+
+
+
+CALL InserirUsuario('PedroADM','ADMOFICAL',1)

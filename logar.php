@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $resultado = $stmt->get_result();
 
-        // Se encontrou alguma linha com esse usuário...
+        // Se encontrou alguma linha com esse usuário
         if ($resultado->num_rows > 0) {
             $Surubinha = $resultado->fetch_assoc();
             
