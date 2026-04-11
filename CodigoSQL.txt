@@ -1,87 +1,90 @@
-﻿DROP DATABASE AprendizadoPHP;
+﻿DROP DATABASE IF EXISTS trabalho_SA;
+CREATE DATABASE trabalho_SA;
+USE trabalho_SA;
 
-CREATE DATABASE AprendizadoPHP;
-
-USE AprendizadoPHP;
-
-CREATE TABLE Usuarios(
-	ID_User CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    User_nome VARCHAR(200) UNIQUE NOT NULL,
-   	User_senha VARCHAR(200) NOT NULL,
-   	User_ADM BOOLEAN
+-- Tabela de Usuários (Acesso ao sistema)
+CREATE TABLE Usuarios (
+    id_usuario CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_nome VARCHAR(100) UNIQUE NOT NULL,
+    user_senha VARCHAR(100) NOT NULL,
+    user_tipo ENUM('COLABORADOR', 'CLIENTE', 'FORNECEDOR') DEFAULT 'CLIENTE'
 );
 
-
-CREATE TABLE Ferraments(
-   ID_Ferramentas CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-   Tipo_Ferramenta VARCHAR(200),
-   Local_Ferramenta VARCHAR(200),
-   QNT_Ferramenta INT
+-- Tabela de Colaboradores
+CREATE TABLE Colaborador (
+    id_colaborador CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    nome VARCHAR(100) NOT NULL,
+    cargo VARCHAR(50),
+    email VARCHAR(100)
 );
 
-CREATE TABLE Emprestimos(
-    ID_Emprestimo CHAR(36) PRIMARY KEY DEFAULT (UUID()),
-    ID_Ferramentas CHAR(36),
-    ID_User CHAR(36),
-    QNT_Ferramenta INT,
-    Inicio_Emprestimo DATETIME,
-    FIM_Emprestimo DATETIME,
-
-    FOREIGN KEY (ID_Ferramentas)  REFERENCES Ferraments(ID_Ferramentas),
-    FOREIGN KEY (ID_User)  REFERENCES Usuarios(ID_User)
+-- Tabela de Clientes
+CREATE TABLE Cliente (
+    id_cliente CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    telefone VARCHAR(20)
 );
 
+-- Tabela de Fornecedores
+CREATE TABLE Fornecedor (
+    id_fornecedor CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20),
+    email VARCHAR(100)
+);
 
+-- Relatórios (Referenciando UUID de Colaborador)
+CREATE TABLE Relatorio (
+    id_relatorio INT PRIMARY KEY AUTO_INCREMENT,
+    data DATE NOT NULL,
+    descricao TEXT,
+    id_colaborador CHAR(36), -- Ajustado para CHAR(36)
+    FOREIGN KEY (id_colaborador) REFERENCES Colaborador(id_colaborador) ON DELETE SET NULL
+);
 
-DELIMITER !!
-CREATE PROCEDURE InserirUsuario (
-    IN p_User_nome VARCHAR(200),
-    IN p_User_senha VARCHAR(200),
-    IN p_User_ADM BOOLEAN
-)
-BEGIN
-    -- Insere os dados passados como parâmetro na tabela
-    INSERT INTO Usuarios (User_nome, User_senha,User_ADM)
-    VALUES (p_User_nome, p_User_senha,p_User_ADM);
-END !!
-DELIMITER ;
+-- Contratos (Referenciando UUID de Cliente)
+CREATE TABLE Contrato (
+    id_contrato INT PRIMARY KEY AUTO_INCREMENT,
+    data DATE NOT NULL,
+    valor DECIMAL(10,2),
+    status VARCHAR(50),
+    id_cliente CHAR(36), -- Ajustado para CHAR(36)
+    FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente) ON DELETE CASCADE
+);
 
+-- Mercadorias (Referenciando UUID de Fornecedor)
+CREATE TABLE Mercadoria (
+    id_mercadoria INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    unidade VARCHAR(20),
+    id_fornecedor CHAR(36), -- Ajustado para CHAR(36)
+    FOREIGN KEY (id_fornecedor) REFERENCES Fornecedor(id_fornecedor) ON DELETE SET NULL
+);
 
-DELIMITER ??
-CREATE PROCEDURE RegistrarEmprestimo (
-    IN p_Nome_Usuario VARCHAR(200),
-    IN p_Tipo_Ferramenta VARCHAR(200),
-    IN p_QNT_Desejada INT,
-    IN p_Data_Inicio DATETIME,
-    IN p_Data_Fim DATETIME
-)
-BEGIN
-    DECLARE v_ID_User CHAR(36);
-    DECLARE v_ID_Ferramentas CHAR(36);
+-- TABELAS ASSOCIATIVAS (Muitos para Muitos)
 
-    
-    SELECT ID_User INTO v_ID_User 
-    FROM Usuarios 
-    WHERE User_nome = p_Nome_Usuario LIMIT 1;
+CREATE TABLE Colaborador_Mercadoria (
+    id_colaborador CHAR(36), -- Ajustado para CHAR(36)
+    id_mercadoria INT,
+    PRIMARY KEY (id_colaborador, id_mercadoria),
+    FOREIGN KEY (id_colaborador) REFERENCES Colaborador(id_colaborador) ON DELETE CASCADE,
+    FOREIGN KEY (id_mercadoria) REFERENCES Mercadoria(id_mercadoria) ON DELETE CASCADE
+);
 
-    -- 2. Pega o ID da Ferramenta baseada no tipo digitado
-    SELECT ID_Ferramentas INTO v_ID_Ferramentas 
-    FROM Ferramentas 
-    WHERE Tipo_Ferramenta = p_Tipo_Ferramenta LIMIT 1;
+CREATE TABLE Relatorio_Contrato (
+    id_relatorio INT,
+    id_contrato INT,
+    PRIMARY KEY (id_relatorio, id_contrato),
+    FOREIGN KEY (id_relatorio) REFERENCES Relatorio(id_relatorio) ON DELETE CASCADE,
+    FOREIGN KEY (id_contrato) REFERENCES Contrato(id_contrato) ON DELETE CASCADE
+);
 
-   
-    IF v_ID_User IS NOT NULL AND v_ID_Ferramentas IS NOT NULL THEN
-        INSERT INTO Emprestimos (ID_Ferramentas, ID_User, QNT_Ferramenta, Inicio_Emprestimo, FIM_Emprestimo)
-        VALUES (v_ID_Ferramentas, v_ID_User, p_QNT_Desejada, p_Data_Inicio, p_Data_Fim);
-    ELSE
-        
-        SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT = 'Erro: Usuário ou Tipo de Ferramenta não encontrados no banco de dados.';
-    END IF;
-
-END ??
-DELIMITER ;
-
-
-
-CALL InserirUsuario('PedroADM','ADMOFICAL',1)
+CREATE TABLE Contrato_Mercadoria (
+    id_contrato INT,
+    id_mercadoria INT,
+    PRIMARY KEY (id_contrato, id_mercadoria),
+    FOREIGN KEY (id_contrato) REFERENCES Contrato(id_contrato) ON DELETE CASCADE,
+    FOREIGN KEY (id_mercadoria) REFERENCES Mercadoria(id_mercadoria) ON DELETE CASCADE
+);

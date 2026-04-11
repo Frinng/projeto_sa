@@ -2,7 +2,7 @@
 $host = '127.0.0.1';
 $user = 'root';
 $pass = ''; 
-$db   = 'AprendizadoPHP';
+$db   = 'trabalho_SA';
 
 // porta do mysql
 $port = 3306; 
