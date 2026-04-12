@@ -61,6 +61,22 @@ CREATE TABLE produto(
     dt_fabricacao DATETIME,
     dt_validade DATETIME
 );
+
+CREATE TABLE contrato (
+    id_contrato INT AUTO_INCREMENT PRIMARY KEY,
+    data_contrato DATETIME DEFAULT CURRENT_TIMESTAMP,
+    contratante VARCHAR(150),
+    contratado VARCHAR(150),
+    id_produto INT,
+    id_cliente CHAR(36),
+    id_fornecedor CHAR(36),
+    -- Definindo os relacionamentos
+    CONSTRAINT fk_contrato_produto FOREIGN KEY (id_produto) REFERENCES produto(id_produto),
+    CONSTRAINT fk_contrato_cliente FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
+    CONSTRAINT fk_contrato_fornecedor FOREIGN KEY (id_fornecedor) REFERENCES Fornecedor(id_fornecedor)
+);
+
+
 -- ==========================================
 -- 2. CRIAÇÃO DAS PROCEDURES
 -- ==========================================
@@ -219,6 +235,20 @@ VALUES
 ('Ração Bovina Engorda', 100, '2024-01-10 08:00:00', '2025-01-10 08:00:00'),
 ('Vacina Febre Aftosa', 50, '2024-02-15 10:00:00', '2024-12-15 10:00:00'),
 ('Leite Integral (Lote Maternidade)', 200, '2024-03-20 06:00:00', '2024-03-27 06:00:00');
+
+INSERT INTO Usuarios (user_email, user_senha, user_tipo) VALUES 
+('contato@admqualicorte.com.br', 'senhaRacao123', 'FORNECEDOR'),
+('vendas@biosaudeanimal.com.br', 'senhaVacina456', 'FORNECEDOR');
+
+-- Atualizando nomes dos fornecedores criados pela Trigger
+UPDATE Fornecedor 
+SET nome = 'ADM Qualicorte', telefone = '(11) 99999-1111' 
+WHERE email = 'contato@admqualicorte.com.br';
+
+UPDATE Fornecedor 
+SET nome = 'BioSaúde Animal', telefone = '(11) 98888-2222' 
+WHERE email = 'vendas@biosaudeanimal.com.br';
+
 
 -- ==========================================
 -- 5. TRIGGER (B.O. RESOLVIDO)
