@@ -1,24 +1,26 @@
 <?php
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db = "trabalho_SA";
+header('Content-Type: application/json');
 
-$conn = new mysqli($host, $user, $pass, $db);
+$host = 'localhost';
+$db   = 'trabalho_SA';
+$user = 'root'; // ajuste se necessário
+$pass = '';     // ajuste se necessário
 
-if ($conn->connect_error) {
-    die(json_encode(["error" => "Falha na conexão"]));
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Consultamos a View que você já criou no SQL
+    $stmt = $pdo->query("SELECT * FROM vw_consultoria_resumo");
+    $dados = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($dados) {
+        echo json_encode($dados);
+    } else {
+        echo json_encode(['error' => 'Nenhum dado encontrado']);
+    }
+
+} catch (PDOException $e) {
+    echo json_encode(['error' => $e->getMessage()]);
 }
-
-$sql = "SELECT * FROM vw_consultoria_resumo";
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    $dados = $result->fetch_assoc();
-    echo json_encode($dados);
-} else {
-    echo json_encode(["error" => "Sem dados"]);
-}
-
-$conn->close();
 ?>

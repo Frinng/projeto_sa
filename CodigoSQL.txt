@@ -254,7 +254,7 @@ INSERT INTO Usuarios (user_email, user_senha, user_tipo) VALUES
 INSERT INTO contrato (data_vencimento, contratante, contratado, valor_total, status_contrato, termos_clausulas, id_produto, id_fornecedor)
 VALUES (
     '2026-12-31', 'Fazenda Alvorada', 'BioSaúde Animal', 15000.00, 'VIGENTE', 
-    'Fornecimento trimestral de 500 doses de vacina contra Febre Aftosa. Pagamento em 30 dias após entrega.',
+    'Fornecimento trimestral de 500 doses de vacina contra Febre Aftosa. Pagamento aem 30 dias após entrega.',
     2, (SELECT id_fornecedor FROM Fornecedor WHERE nome = 'BioSaúde Animal')
 );
 -- 3. Fazenda Alvorada VENDENDO Gado (Cliente: Supermercado BH)
