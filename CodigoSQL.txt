@@ -2,7 +2,10 @@
 CREATE DATABASE trabalho_SA;
 USE trabalho_SA;
 
--- Tabela de Usuários (Acesso ao sistema)
+-- ==========================================
+-- 1. CRIAÇÃO DAS TABELAS
+-- ==========================================
+
 CREATE TABLE Usuarios (
     id_usuario CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     user_nome VARCHAR(100) UNIQUE NOT NULL,
@@ -10,7 +13,6 @@ CREATE TABLE Usuarios (
     user_tipo ENUM('COLABORADOR', 'CLIENTE', 'FORNECEDOR') DEFAULT 'CLIENTE'
 );
 
--- Tabela de Colaboradores
 CREATE TABLE Colaborador (
     id_colaborador CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     nome VARCHAR(100) NOT NULL,
@@ -18,7 +20,6 @@ CREATE TABLE Colaborador (
     email VARCHAR(100)
 );
 
--- Tabela de Clientes
 CREATE TABLE Cliente (
     id_cliente CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     nome VARCHAR(100) NOT NULL,
@@ -26,7 +27,25 @@ CREATE TABLE Cliente (
     telefone VARCHAR(20)
 );
 
--- Tabela de Fornecedores
+CREATE TABLE Lotes (
+    id_lote INT PRIMARY KEY AUTO_INCREMENT,
+    nome_lote VARCHAR(50) NOT NULL,
+    descricao VARCHAR(255),
+    data_criacao DATE DEFAULT (CURRENT_DATE),
+    status ENUM('ATIVO', 'VENDIDO', 'QUARENTENA') DEFAULT 'ATIVO'
+);
+
+CREATE TABLE animais(
+    id_animal CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    brinco_identificador VARCHAR(20) UNIQUE,
+    id_lote INT,
+    idade_meses INT,
+    sexo_animal VARCHAR(10),
+    peso_kg DECIMAL(10,2),
+    raca VARCHAR(50) DEFAULT 'Nelore',
+    FOREIGN KEY (id_lote) REFERENCES Lotes(id_lote) ON DELETE SET NULL
+);
+
 CREATE TABLE Fornecedor (
     id_fornecedor CHAR(36) PRIMARY KEY DEFAULT (UUID()),
     nome VARCHAR(100) NOT NULL,
@@ -34,39 +53,34 @@ CREATE TABLE Fornecedor (
     email VARCHAR(100)
 );
 
--- Relatórios (Referenciando UUID de Colaborador)
 CREATE TABLE Relatorio (
     id_relatorio INT PRIMARY KEY AUTO_INCREMENT,
     data DATE NOT NULL,
     descricao TEXT,
-    id_colaborador CHAR(36), -- Ajustado para CHAR(36)
+    id_colaborador CHAR(36),
     FOREIGN KEY (id_colaborador) REFERENCES Colaborador(id_colaborador) ON DELETE SET NULL
 );
 
--- Contratos (Referenciando UUID de Cliente)
 CREATE TABLE Contrato (
     id_contrato INT PRIMARY KEY AUTO_INCREMENT,
-    data DATE NOT NULL,
-    valor DECIMAL(10,2),
+    data_emissao DATE NOT NULL,
+    valor_total DECIMAL(15,2),
     status VARCHAR(50),
-    id_cliente CHAR(36), -- Ajustado para CHAR(36)
+    id_cliente CHAR(36),
     FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente) ON DELETE CASCADE
 );
 
--- Mercadorias (Referenciando UUID de Fornecedor)
 CREATE TABLE Mercadoria (
     id_mercadoria INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
     unidade VARCHAR(20),
-    id_fornecedor CHAR(36), -- Ajustado para CHAR(36)
+    id_fornecedor CHAR(36),
     FOREIGN KEY (id_fornecedor) REFERENCES Fornecedor(id_fornecedor) ON DELETE SET NULL
 );
 
--- TABELAS ASSOCIATIVAS (Muitos para Muitos)
-
 CREATE TABLE Colaborador_Mercadoria (
-    id_colaborador CHAR(36), -- Ajustado para CHAR(36)
+    id_colaborador CHAR(36),
     id_mercadoria INT,
     PRIMARY KEY (id_colaborador, id_mercadoria),
     FOREIGN KEY (id_colaborador) REFERENCES Colaborador(id_colaborador) ON DELETE CASCADE,
@@ -76,8 +90,10 @@ CREATE TABLE Colaborador_Mercadoria (
 CREATE TABLE Relatorio_Contrato (
     id_relatorio INT,
     id_contrato INT,
+    id_cliente CHAR(36),
     PRIMARY KEY (id_relatorio, id_contrato),
     FOREIGN KEY (id_relatorio) REFERENCES Relatorio(id_relatorio) ON DELETE CASCADE,
+    FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
     FOREIGN KEY (id_contrato) REFERENCES Contrato(id_contrato) ON DELETE CASCADE
 );
 
@@ -88,3 +104,153 @@ CREATE TABLE Contrato_Mercadoria (
     FOREIGN KEY (id_contrato) REFERENCES Contrato(id_contrato) ON DELETE CASCADE,
     FOREIGN KEY (id_mercadoria) REFERENCES Mercadoria(id_mercadoria) ON DELETE CASCADE
 );
+
+-- ==========================================
+-- 2. CRIAÇÃO DAS PROCEDURES
+-- ==========================================
+
+DELIMITER $$
+
+-- Inserir Lote
+CREATE PROCEDURE sp_inserir_lote(
+    IN p_nome_lote VARCHAR(50),
+    IN p_descricao VARCHAR(255),
+    IN p_status ENUM('ATIVO', 'VENDIDO', 'QUARENTENA')
+)
+BEGIN
+    IF p_nome_lote IS NULL OR p_nome_lote = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Erro: O nome do lote não pode ser vazio.';
+    ELSE
+        INSERT INTO Lotes (nome_lote, descricao, status, data_criacao)
+        VALUES (p_nome_lote, p_descricao, p_status, CURRENT_DATE);
+    END IF;
+END $$
+
+-- Adicionar Animal Simples (sem lote/peso)
+CREATE PROCEDURE sp_adicionar_animal(
+    IN p_idade INT,
+    IN p_sexo VARCHAR(10)
+)
+BEGIN
+    INSERT INTO animais (idade_meses, sexo_animal) 
+    VALUES (p_idade, p_sexo);
+END $$
+
+-- Adicionar Animal Completo no Lote
+CREATE PROCEDURE sp_adicionar_animal_lote(
+    IN p_brinco VARCHAR(20),
+    IN p_lote INT,
+    IN p_idade INT,
+    IN p_sexo VARCHAR(10),
+    IN p_peso DECIMAL(10,2)
+)
+BEGIN
+    INSERT INTO animais (brinco_identificador, id_lote, idade_meses, sexo_animal, peso_kg) 
+    VALUES (p_brinco, p_lote, p_idade, p_sexo, p_peso);
+END $$
+
+DELIMITER ;
+
+-- ==========================================
+-- 3. CRIAÇÃO DAS VIEWS
+-- ==========================================
+
+CREATE VIEW vw_vacas_adultas AS
+SELECT id_animal, idade_meses, sexo_animal
+FROM animais
+WHERE idade_meses > 7 AND (sexo_animal = 'Fêmea' OR sexo_animal = 'FEMEA');
+
+CREATE VIEW vw_machos_idade AS
+SELECT id_animal, idade_meses, sexo_animal AS tipo
+FROM animais
+WHERE idade_meses < 2 AND (sexo_animal = 'Macho' OR sexo_animal = 'MACHO');
+
+CREATE VIEW vw_resumo_lotes AS
+SELECT 
+    l.id_lote,
+    l.nome_lote,
+    COUNT(a.id_animal) AS total_animais,
+    COALESCE(AVG(a.peso_kg), 0) AS peso_medio_lote
+FROM Lotes l
+LEFT JOIN animais a ON l.id_lote = a.id_lote
+GROUP BY l.id_lote;
+
+CREATE VIEW vw_matrizes_reproducao AS
+SELECT * FROM animais 
+WHERE (sexo_animal = 'FEMEA' OR sexo_animal = 'Fêmea') AND idade_meses >= 24;
+
+
+CREATE VIEW vw_lote_maternidade AS
+SELECT 
+    brinco_identificador, 
+    idade_meses, 
+    peso_kg, 
+    raca
+FROM animais
+WHERE id_lote = (SELECT id_lote FROM Lotes WHERE nome_lote = 'Lote Maternidade');
+
+
+CREATE VIEW vw_lote_engorda AS
+SELECT 
+    brinco_identificador, 
+    sexo_animal,
+    idade_meses, 
+    peso_kg
+FROM animais
+WHERE id_lote = (SELECT id_lote FROM Lotes WHERE nome_lote = 'Lote Engorda Intensiva');
+
+CREATE VIEW vw_lote_quarentena AS
+SELECT 
+    brinco_identificador, 
+    sexo_animal,
+    idade_meses, 
+    status
+FROM animais a
+JOIN Lotes l ON a.id_lote = l.id_lote
+WHERE l.nome_lote = 'Lote Quarentena';
+
+-- ==========================================
+-- 4. INSERÇÃO DE DADOS (POPULANDO)
+-- ==========================================
+
+-- Criando os Lotes Primeiro
+CALL sp_inserir_lote('Lote Geral', 'Lote inicial para animais sem destino definido', 'ATIVO'); -- ID 1
+CALL sp_inserir_lote('Lote Quarentena', 'Animais em observação', 'QUARENTENA');               -- ID 2
+CALL sp_inserir_lote('Lote Maternidade', 'Vacas matrizes em período de lactação', 'ATIVO');   -- ID 3
+CALL sp_inserir_lote('Lote Engorda Intensiva', 'Machos para terminação e abate', 'ATIVO');   -- ID 4
+
+-- Adicionando animais soltos (sem lote inicial)
+CALL sp_adicionar_animal(3, 'Fêmea');
+CALL sp_adicionar_animal(4, 'Fêmea');
+CALL sp_adicionar_animal(2, 'Fêmea');
+CALL sp_adicionar_animal(5, 'Fêmea');
+CALL sp_adicionar_animal(3, 'Fêmea');
+CALL sp_adicionar_animal(6, 'Fêmea');
+CALL sp_adicionar_animal(4, 'Fêmea');
+CALL sp_adicionar_animal(2, 'Fêmea');
+CALL sp_adicionar_animal(5, 'Fêmea');
+CALL sp_adicionar_animal(3, 'Fêmea');
+CALL sp_adicionar_animal(5, 'Macho');
+
+-- Adicionando animais específicos nos lotes criados
+-- Lote Maternidade (ID 3)
+CALL sp_adicionar_animal_lote('V-LAC-01', 3, 48, 'Fêmea', 490.50);
+CALL sp_adicionar_animal_lote('V-LAC-02', 3, 52, 'Fêmea', 510.00);
+CALL sp_adicionar_animal_lote('V-LAC-06', 3, 38, 'Fêmea', 470.00);
+CALL sp_adicionar_animal_lote('V-LAC-07', 3, 45, 'Fêmea', 505.20);
+CALL sp_adicionar_animal_lote('V-LAC-08', 3, 50, 'Fêmea', 512.00);
+CALL sp_adicionar_animal_lote('V-LAC-09', 3, 33, 'Fêmea', 465.80);
+CALL sp_adicionar_animal_lote('V-LAC-10', 3, 55, 'Fêmea', 530.00);
+CALL sp_adicionar_animal_lote('V-LAC-11', 3, 29, 'Fêmea', 458.40);
+CALL sp_adicionar_animal_lote('V-LAC-12', 3, 41, 'Fêmea', 489.00);
+CALL sp_adicionar_animal_lote('V-LAC-13', 3, 47, 'Fêmea', 501.15);
+
+-- Lote Engorda (ID 4)
+CALL sp_adicionar_animal_lote('M-ACO-01', 4, 18, 'Macho', 420.00);
+CALL sp_adicionar_animal_lote('M-ACO-02', 4, 20, 'Macho', 455.30);
+CALL sp_adicionar_animal_lote('M-ACO-03', 4, 19, 'Macho', 438.00);
+
+-- Lote Quarentena (ID 5)
+CALL sp_adicionar_animal_lote('Q-001', 2, 12, 'Fêmea', 300.00);
+CALL sp_adicionar_animal_lote('Q-002', 2, 14, 'Fêmea', 320.50);
+CALL sp_adicionar_animal_lote('Q-003', 2, 10, 'Fêmea', 280.00);
