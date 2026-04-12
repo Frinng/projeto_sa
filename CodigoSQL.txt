@@ -243,8 +243,44 @@ VALUES
 ('Leite Integral (Lote Maternidade)', 200, '2024-03-20 06:00:00', '2024-03-27 06:00:00');
 
 INSERT INTO Usuarios (user_email, user_senha, user_tipo) VALUES 
-('contato@admqualicorte.com.br', 'senhaRacao123', 'FORNECEDOR'),
+('contato@admqualicorte.com.br', 'contato@admqualicorte.com.br', 'FORNECEDOR'),
 ('vendas@biosaudeanimal.com.br', 'senhaVacina456', 'FORNECEDOR');
+
+INSERT INTO Usuarios (user_email, user_senha, user_tipo) VALUES 
+('financeiro@supermercadobh.com.br', 'bh123', 'CLIENTE'),
+('comercial@itambe.com.br', 'itambe456', 'CLIENTE');
+
+-- 1. Fazenda Alvorada COMPRANDO Vacina (Fornecedor: BioSaúde)
+INSERT INTO contrato (data_vencimento, contratante, contratado, valor_total, status_contrato, termos_clausulas, id_produto, id_fornecedor)
+VALUES (
+    '2026-12-31', 'Fazenda Alvorada', 'BioSaúde Animal', 15000.00, 'VIGENTE', 
+    'Fornecimento trimestral de 500 doses de vacina contra Febre Aftosa. Pagamento em 30 dias após entrega.',
+    2, (SELECT id_fornecedor FROM Fornecedor WHERE nome = 'BioSaúde Animal')
+);
+-- 3. Fazenda Alvorada VENDENDO Gado (Cliente: Supermercado BH)
+INSERT INTO contrato (data_vencimento, contratante, contratado, valor_total, status_contrato, termos_clausulas, id_lote, id_cliente)
+VALUES (
+    '2026-05-20', 'Supermercado BH', 'Fazenda Alvorada', 125000.00, 'VIGENTE', 
+    'Venda de 30 cabeças de gado Nelore (Lote Engorda). Peso médio mínimo de 18 arrobas por animal.',
+    4, (SELECT id_cliente FROM Cliente WHERE nome = 'Supermercado BH')
+);
+
+-- 4. Fazenda Alvorada VENDENDO Leite (Cliente: Itambé)
+INSERT INTO contrato (data_vencimento, contratante, contratado, valor_total, status_contrato, termos_clausulas, id_produto, id_cliente)
+VALUES (
+    '2027-01-10', 'Itambé Laticínios', 'Fazenda Alvorada', 85000.00, 'VIGENTE', 
+    'Fornecimento diário de 1000 litros de leite tipo A. Coleta realizada por caminhão resfriado da contratante.',
+    3, (SELECT id_cliente FROM Cliente WHERE nome = 'Itambé Laticínios')
+);
+
+-- 5. Fazenda Alvorada VENDENDO Leite (Cliente: Supermercado BH)
+INSERT INTO contrato (data_vencimento, contratante, contratado, valor_total, status_contrato, termos_clausulas, id_produto, id_cliente)
+VALUES (
+    '2026-08-30', 'Supermercado BH', 'Fazenda Alvorada', 32000.00, 'VIGENTE', 
+    'Fornecimento de leite envasado para marca própria. Entrega em centros de distribuição regional.',
+    3, (SELECT id_cliente FROM Cliente WHERE nome = 'Supermercado BH')
+);
+
 
 -- Atualizando nomes dos fornecedores criados pela Trigger
 UPDATE Fornecedor 
