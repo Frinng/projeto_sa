@@ -54,6 +54,13 @@ CREATE TABLE animais(
     FOREIGN KEY (id_lote) REFERENCES Lotes(id_lote) ON DELETE SET NULL
 );
 
+CREATE TABLE produto(
+    id_produto INT AUTO_INCREMENT PRIMARY KEY,
+    nome_produto VARCHAR(150),
+    Qnt_Produto INT, -- Aqui estava o erro (tinha um ponto final)
+    dt_fabricacao DATETIME,
+    dt_validade DATETIME
+);
 -- ==========================================
 -- 2. CRIAÇÃO DAS PROCEDURES
 -- ==========================================
@@ -134,6 +141,43 @@ SELECT
     45.00 AS taxa_abate,
     5.0 AS margem_lucro;
 
+CREATE OR REPLACE VIEW vw_lote_maternidade AS
+SELECT a.brinco_identificador, a.idade_meses, a.peso_kg, a.raca
+FROM animais a
+JOIN Lotes l ON a.id_lote = l.id_lote
+WHERE l.nome_lote = 'Lote Maternidade';
+
+CREATE OR REPLACE VIEW vw_status_geral_animais AS
+SELECT 
+    a.brinco_identificador AS tag,
+    a.sexo_animal AS sexo,
+    a.peso_kg AS peso,
+    -- Identifica se é Matriz (Fêmea adulta, geralmente acima de 24 meses ou em lote específico)
+    CASE 
+        WHEN a.sexo_animal LIKE 'F%' AND a.idade_meses >= 24 THEN 'SIM'
+        ELSE 'NÃO'
+    END AS eh_matriz,
+    -- Verifica se pertence ao lote de Engorda
+    CASE 
+        WHEN l.nome_lote = 'Lote Engorda Intensiva' THEN 'SIM'
+        ELSE 'NÃO'
+    END AS em_engorda,
+    -- Verifica se está na Maternidade
+    CASE 
+        WHEN l.nome_lote = 'Lote Maternidade' THEN 'SIM'
+        ELSE 'NÃO'
+    END AS na_maternidade,
+    -- Verifica se está em Quarentena (pelo nome do lote ou status do lote)
+    CASE 
+        WHEN l.nome_lote = 'Lote Quarentena' OR l.status = 'QUARENTENA' THEN 'SIM'
+        ELSE 'NÃO'
+    END AS em_quarentena
+FROM animais a
+LEFT JOIN Lotes l ON a.id_lote = l.id_lote;
+
+-- Para testar a view:
+-- SELECT * FROM vw_status_geral_animais;
+
 -- ==========================================
 -- 4. INSERÇÃO DE DADOS (POPULANDO)
 -- ==========================================
@@ -144,11 +188,32 @@ CALL sp_inserir_lote('Lote Maternidade', 'Lactação', 'ATIVO');
 CALL sp_inserir_lote('Lote Engorda Intensiva', 'Terminação', 'ATIVO');
 
 -- Lote Engorda (ID 4)
+
+
+-- Lote 
+CALL sp_adicionar_animal_lote('MAT-002', 3, 40, 'Fêmea', 510.50);
+CALL sp_adicionar_animal_lote('MAT-003', 3, 42, 'Fêmea', 530.00);
+CALL sp_adicionar_animal_lote('MAT-004', 3, 38, 'Fêmea', 495.20);
+CALL sp_adicionar_animal_lote('MAT-005', 3, 45, 'Fêmea', 550.00);
+CALL sp_adicionar_animal_lote('MAT-006', 3, 39, 'Fêmea', 505.00);
+
+-- +8 Animais na Engorda (Lote ID: 4)
+CALL sp_adicionar_animal_lote('ENG-004', 4, 22, 'Macho', 480.00);
+CALL sp_adicionar_animal_lote('ENG-005', 4, 21, 'Macho', 475.50);
+CALL sp_adicionar_animal_lote('ENG-006', 4, 23, 'Macho', 490.00);
+CALL sp_adicionar_animal_lote('ENG-007', 4, 20, 'Macho', 465.00);
+CALL sp_adicionar_animal_lote('ENG-008', 4, 24, 'Macho', 505.20);
+CALL sp_adicionar_animal_lote('ENG-009', 4, 19, 'Macho', 440.00);
+CALL sp_adicionar_animal_lote('ENG-010', 4, 22, 'Macho', 485.00);
+CALL sp_adicionar_animal_lote('ENG-011', 4, 21, 'Macho', 470.30);
 CALL sp_adicionar_animal_lote('M-ACO-01', 4, 18, 'Macho', 460.00); 
 CALL sp_adicionar_animal_lote('M-ACO-02', 4, 20, 'Macho', 455.30); 
 CALL sp_adicionar_animal_lote('M-ACO-03', 4, 19, 'Macho', 438.00);
 
--- Lote Quarentena (ID 2)
+-- +3 Animais em Quarentena (Lote ID: 2)
+CALL sp_adicionar_animal_lote('QUA-002', 2, 15, 'Fêmea', 320.00);
+CALL sp_adicionar_animal_lote('QUA-003', 2, 14, 'Macho', 310.00);
+CALL sp_adicionar_animal_lote('QUA-004', 2, 16, 'Fêmea', 335.50);
 CALL sp_adicionar_animal_lote('Q-001', 2, 12, 'Fêmea', 300.00);
 
 -- ==========================================
