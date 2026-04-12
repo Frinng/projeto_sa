@@ -2,27 +2,26 @@
 require("conexao.php");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $User_nome = $_POST['usuario'] ?? null;
-    $User_senha = $_POST['senha'] ?? null;
+    $email = $_POST['usuario'] ?? null;
+    $senha = $_POST['senha'] ?? null;
 
-    if ($User_nome && $User_senha) {
-        // Buscamos a senha e o tipo do usuário
-        $stmt = $mysqli->prepare("SELECT User_senha, User_tipo FROM Usuarios WHERE User_nome = ?");
-        $stmt->bind_param("s", $User_nome);
+    if ($email && $senha) {
+        $stmt = $mysqli->prepare("SELECT user_senha, user_tipo FROM Usuarios WHERE user_email = ?");
+        $stmt->bind_param("s", $email);
         $stmt->execute();
         $resultado = $stmt->get_result();
 
         if ($resultado->num_rows > 0) {
             $dados = $resultado->fetch_assoc();
 
-            if ($User_senha === $dados['User_senha']) {
-                // Retorna o tipo (ADMIN, COLABORADOR, CLIENTE ou FORNECEDOR)
-                echo strtoupper($dados['User_tipo']);
+            if ($senha === $dados['user_senha']) {
+                echo strtoupper($dados['user_tipo']);
             } else {
-                echo "FALHA";
+                echo "FALHA"; // Senha errada
             }
         } else {
-            echo "FALHA";
+            // AQUI ESTÁ A MUDANÇA:
+            echo "EMAIL_INEXISTENTE"; 
         }
         $stmt->close();
     } else {
