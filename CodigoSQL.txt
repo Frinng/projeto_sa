@@ -65,13 +65,19 @@ CREATE TABLE produto(
 CREATE TABLE contrato (
     id_contrato INT AUTO_INCREMENT PRIMARY KEY,
     data_contrato DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_vencimento DATE, -- Para o fornecedor saber até quando vale o acordo
     contratante VARCHAR(150),
     contratado VARCHAR(150),
-    id_produto INT,
+    valor_total DECIMAL(10, 2), -- Essencial para a Consultoria e Financiamento
+    status_contrato ENUM('VIGENTE', 'FINALIZADO', 'CANCELADO') DEFAULT 'VIGENTE',
+    termos_clausulas TEXT, -- Onde você escreve as regras do contrato
+    
+    id_produto INT, -- Se for insumos (ração, vacina)
+    id_lote INT,    -- Se for compra/venda de gado
     id_cliente CHAR(36),
     id_fornecedor CHAR(36),
-    -- Definindo os relacionamentos
-    CONSTRAINT fk_contrato_produto FOREIGN KEY (id_produto) REFERENCES produto(id_produto),
+
+    CONSTRAINT fk_contrato_lote FOREIGN KEY (id_lote) REFERENCES Lotes(id_lote),
     CONSTRAINT fk_contrato_cliente FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
     CONSTRAINT fk_contrato_fornecedor FOREIGN KEY (id_fornecedor) REFERENCES Fornecedor(id_fornecedor)
 );
